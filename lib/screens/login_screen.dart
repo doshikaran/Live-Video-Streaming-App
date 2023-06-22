@@ -7,7 +7,7 @@ import 'package:twitch/widgets/loading_indicator.dart';
 
 class LoginScreen extends StatefulWidget {
   static const String routeName = '/login';
-  const LoginScreen({super.key});
+  const LoginScreen({Key? key}) : super(key: key);
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();

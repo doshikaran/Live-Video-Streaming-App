@@ -7,7 +7,7 @@ import 'package:twitch/widgets/loading_indicator.dart';
 
 class SignUpScreen extends StatefulWidget {
   static const String routeName = '/signup';
-  const SignUpScreen({super.key});
+  const SignUpScreen({Key? key}) : super(key: key);
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
