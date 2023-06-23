@@ -7,7 +7,7 @@ import 'package:twitch/utils/color.dart';
 
 class HomeScreen extends StatefulWidget {
   static String routeName = '/home';
-  const HomeScreen({super.key});
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();

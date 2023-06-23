@@ -7,6 +7,7 @@ import 'package:twitch/models/livestream.dart';
 import 'package:twitch/providers/user_provider.dart';
 import 'package:twitch/resources/storage_methods.dart';
 import 'package:twitch/utils/utils.dart';
+import 'package:uuid/uuid.dart';
 
 class FireStoreMethods {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -18,11 +19,11 @@ class FireStoreMethods {
     String channelId = '';
     try {
       if (title.isNotEmpty && image != null) {
-        if (!(await _firestore
+        if (!((await _firestore
                 .collection('livestream')
-                .doc(user.user.uid)
+                .doc('${user.user.uid}${user.user.username}')
                 .get())
-            .exists) {
+            .exists)) {
           String thumbnailUrl = await _storageMethods.uploadImageToStorage(
             'livestream-thumbnails',
             image,
@@ -52,5 +53,60 @@ class FireStoreMethods {
       showSnackBar(context, e.message!);
     }
     return channelId;
+  }
+
+  Future<void> endLiveStream(String channelId) async {
+    try {
+      QuerySnapshot snap = await _firestore
+          .collection('livestream')
+          .doc(channelId)
+          .collection('comments')
+          .get();
+
+      for (int i = 0; i < snap.docs.length; i++) {
+        await _firestore
+            .collection('livestream')
+            .doc(channelId)
+            .collection('comments')
+            .doc(
+              ((snap.docs[i].data()! as dynamic)['commentId']),
+            )
+            .delete();
+      }
+      await _firestore.collection('livestream').doc(channelId).delete();
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> updateViewCount(String id, bool isIncrease) async {
+    try {
+      await _firestore.collection('livestream').doc(id).update({
+        'viewers': FieldValue.increment(isIncrease ? 1 : -1),
+      });
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> chat(String text, String id, BuildContext context) async {
+    final user = Provider.of<UserProvider>(context, listen: false);
+    try {
+      String commentId = const Uuid().v1();
+      await _firestore
+          .collection('livestream')
+          .doc(id)
+          .collection('comments')
+          .doc(commentId)
+          .set({
+        'username': user.user.username,
+        'message': text,
+        'uid': user.user.uid,
+        'createdAt': DateTime.now(),
+        'commentId': commentId,
+      });
+    } on FirebaseException catch (e) {
+      showSnackBar(context, e.message!);
+    }
   }
 }
