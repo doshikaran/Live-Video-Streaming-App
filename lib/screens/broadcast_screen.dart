@@ -8,6 +8,7 @@ import 'package:agora_rtc_engine/rtc_local_view.dart' as RtcLocalView;
 import 'package:agora_rtc_engine/rtc_remote_view.dart' as RtcRemoteView;
 import 'package:twitch/resources/firestore_methods.dart';
 import 'package:twitch/screens/home_screem.dart';
+import 'package:twitch/widgets/chat.dart';
 
 import '../config/appId.dart';
 
@@ -28,6 +29,9 @@ class BroadCastScreen extends StatefulWidget {
 class _BroadCastScreenState extends State<BroadCastScreen> {
   late final RtcEngine _engine;
   List<int> remoteUid = [];
+  bool switchCamera = true;
+  bool isMuted = false;
+  bool isScreenSharing = false;
 
   @override
   void initState() {
@@ -79,6 +83,23 @@ class _BroadCastScreenState extends State<BroadCastScreen> {
     ));
   }
 
+  void _switchCamera() {
+    _engine.switchCamera().then((value) {
+      setState(() {
+        switchCamera = !switchCamera;
+      });
+    }).catchError((error) {
+      debugPrint('switchCamera error $error');
+    });
+  }
+
+  void onToggleMute() async {
+    setState(() {
+      isMuted = !isMuted;
+    });
+    await _engine.muteLocalAudioStream(isMuted);
+  }
+
   void _joinChannel() async {
     if (defaultTargetPlatform == TargetPlatform.android) {
       await [Permission.microphone, Permission.camera].request();
@@ -112,7 +133,28 @@ class _BroadCastScreenState extends State<BroadCastScreen> {
         body: Padding(
           padding: const EdgeInsets.all(10.0),
           child: Column(
-            children: [_renderVideo(user)],
+            children: [
+              _renderVideo(user),
+              if ("${user.uid}${user.username}" == widget.channelId)
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    InkWell(
+                      onTap: _switchCamera,
+                      child: const Text('Switch Camera'),
+                    ),
+                    InkWell(
+                      onTap: onToggleMute,
+                      child: Text(isMuted ? 'Unmute' : 'Mute'),
+                    )
+                  ],
+                ),
+              Expanded(
+                  child: Chat(
+                channelId: widget.channelId,
+              )),
+            ],
           ),
         ),
       ),
