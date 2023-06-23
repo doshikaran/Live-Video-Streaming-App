@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:agora_rtc_engine/rtc_engine.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +11,7 @@ import 'package:agora_rtc_engine/rtc_remote_view.dart' as RtcRemoteView;
 import 'package:twitch/resources/firestore_methods.dart';
 import 'package:twitch/screens/home_screem.dart';
 import 'package:twitch/widgets/chat.dart';
+import 'package:http/http.dart' as http;
 
 import '../config/appId.dart';
 
@@ -53,34 +56,52 @@ class _BroadCastScreenState extends State<BroadCastScreen> {
     _joinChannel();
   }
 
+  String baseUrl = "https://twitchapp-9b9b957b5eef.herokuapp.com/";
+  String? token;
+
+  Future<void> getToken() async {
+    final res = await http.get(
+      Uri.parse(baseUrl +
+          '/rtc/' +
+          widget.channelId +
+          '/publisher/userAccount/' +
+          Provider.of<UserProvider>(context, listen: false).user.uid +
+          '/'),
+    );
+
+    if (res.statusCode == 200) {
+      setState(() {
+        token = res.body;
+        token = jsonDecode(token!)['rtcToken'];
+      });
+    } else {
+      debugPrint('Failed to fetch the token');
+    }
+  }
+
   void _addListeners() {
-    _engine.setEventHandler(RtcEngineEventHandler(
-      joinChannelSuccess: (channel, uid, elapsed) {
-        debugPrint('joinChannelSuccess $channel $uid $elapsed');
-      },
-      userJoined: (uid, elapsed) {
-        debugPrint('userJoined $uid $elapsed');
-        setState(() {
-          remoteUid.add(uid);
-        });
-      },
-      userOffline: (uid, reason) {
-        debugPrint('userOffline $uid $reason');
-        setState(() {
-          remoteUid.removeWhere((element) => element == uid);
-        });
-      },
-      leaveChannel: (stats) {
-        debugPrint('leaveChannel $stats');
-        setState(() {
-          remoteUid.clear();
-        });
-      },
-      // tokenPrivilegeWillExpire: (token) async {
-      //   await getToken();
-      //   await _engine.renewToken(token);
-      // }
-    ));
+    _engine.setEventHandler(
+        RtcEngineEventHandler(joinChannelSuccess: (channel, uid, elapsed) {
+      debugPrint('joinChannelSuccess $channel $uid $elapsed');
+    }, userJoined: (uid, elapsed) {
+      debugPrint('userJoined $uid $elapsed');
+      setState(() {
+        remoteUid.add(uid);
+      });
+    }, userOffline: (uid, reason) {
+      debugPrint('userOffline $uid $reason');
+      setState(() {
+        remoteUid.removeWhere((element) => element == uid);
+      });
+    }, leaveChannel: (stats) {
+      debugPrint('leaveChannel $stats');
+      setState(() {
+        remoteUid.clear();
+      });
+    }, tokenPrivilegeWillExpire: (token) async {
+      await getToken();
+      await _engine.renewToken(token);
+    }));
   }
 
   void _switchCamera() {
@@ -101,11 +122,12 @@ class _BroadCastScreenState extends State<BroadCastScreen> {
   }
 
   void _joinChannel() async {
+    await getToken();
     if (defaultTargetPlatform == TargetPlatform.android) {
       await [Permission.microphone, Permission.camera].request();
     }
     await _engine.joinChannelWithUserAccount(
-      tempToken,
+      token,
       "test123",
       Provider.of<UserProvider>(context, listen: false).user.username,
     );
