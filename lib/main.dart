@@ -20,13 +20,13 @@ void main() async {
   if (kIsWeb) {
     await Firebase.initializeApp(
         options: const FirebaseOptions(
-            apiKey: "AIzaSyADoY4MSk5ildg1Eyxjd7V1wJdZalm-8r0",
-            authDomain: "twitch-a86bf.firebaseapp.com",
-            projectId: "twitch-a86bf",
-            storageBucket: "twitch-a86bf.appspot.com",
-            messagingSenderId: "513165533945",
-            appId: "1:513165533945:web:c67474d8041b0289c4f828",
-            measurementId: "G-703ZJSJN2B"));
+            apiKey: "",
+            authDomain: "",
+            projectId: "",
+            storageBucket: "",
+            messagingSenderId: "",
+            appId: "",
+            measurementId: ""));
   } else {}
   await Firebase.initializeApp();
   runApp(MultiProvider(providers: [
