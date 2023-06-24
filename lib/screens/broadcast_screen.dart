@@ -12,6 +12,7 @@ import 'package:twitch/resources/firestore_methods.dart';
 import 'package:twitch/screens/home_screem.dart';
 import 'package:twitch/widgets/chat.dart';
 import 'package:http/http.dart' as http;
+import 'package:twitch/widgets/custom_button.dart';
 
 import '../config/appId.dart';
 
@@ -56,7 +57,7 @@ class _BroadCastScreenState extends State<BroadCastScreen> {
     _joinChannel();
   }
 
-  String baseUrl = "https://twitchapp-9b9b957b5eef.herokuapp.com/";
+  String baseUrl = "https://twitchapp-9b9b957b5eef.herokuapp.com";
   String? token;
 
   Future<void> getToken() async {
@@ -128,7 +129,7 @@ class _BroadCastScreenState extends State<BroadCastScreen> {
     }
     await _engine.joinChannelWithUserAccount(
       token,
-      "test123",
+      widget.channelId,
       Provider.of<UserProvider>(context, listen: false).user.username,
     );
   }
@@ -152,6 +153,15 @@ class _BroadCastScreenState extends State<BroadCastScreen> {
         return Future.value(true);
       },
       child: Scaffold(
+        bottomNavigationBar: widget.isBroadcaster
+            ? Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: CustomButton(
+                  text: "Leave Stream",
+                  onTap: _leaveChannel,
+                ),
+              )
+            : null,
         body: Padding(
           padding: const EdgeInsets.all(10.0),
           child: Column(
